@@ -3,7 +3,6 @@ import {
   CellType,
   planSpaceTimePath,
   ReservationTable,
-  SimulationEngine,
 } from '../src/engine';
 
 describe('Space-Time A* Planner Bounds & Unreachable Handling', () => {
@@ -14,7 +13,6 @@ describe('Space-Time A* Planner Bounds & Unreachable Handling', () => {
       Array.from({ length: width }, (): CellType => 'floor')
     );
 
-    // Seal off (8, 8) completely with walls
     cells[7]![8] = 'wall';
     cells[9]![8] = 'wall';
     cells[8]![7] = 'wall';
