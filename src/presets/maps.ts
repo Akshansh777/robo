@@ -68,7 +68,6 @@ export function createNarrowAisleShowdown(seed = 42): SimulationEngine {
     Array.from({ length: width }, (): CellType => 'wall')
   );
 
-  // Two parallel 1-cell-wide corridors connected at ends with passing bays
   for (let x = 1; x < width - 1; x++) {
     cells[2]![x] = 'floor';
     cells[4]![x] = 'floor';
@@ -76,12 +75,10 @@ export function createNarrowAisleShowdown(seed = 42): SimulationEngine {
   cells[3]![1] = 'floor';
   cells[3]![width - 2] = 'floor';
 
-  // Passing bays along top and bottom walls
   cells[1]![5] = 'bay';
   cells[1]![9] = 'bay';
   cells[5]![7] = 'bay';
 
-  // Chargers and stations
   cells[1]![1] = 'charger';
   cells[5]![13] = 'charger';
   cells[2]![1] = 'pickup';
@@ -174,6 +171,87 @@ export function createNarrowAisleShowdown(seed = 42): SimulationEngine {
   return engine;
 }
 
+export function createCorridorBypassScenario(seed = 42): SimulationEngine {
+  const width = 9;
+  const height = 3;
+  const cells: CellType[][] = Array.from({ length: height }, () =>
+    Array.from({ length: width }, (): CellType => 'wall')
+  );
+
+  for (let x = 0; x < width; x++) {
+    cells[1]![x] = 'floor';
+  }
+  cells[0]![4] = 'bay';
+  cells[1]![0] = 'pickup';
+  cells[1]![8] = 'pickup';
+
+  const engine = new SimulationEngine({
+    seed,
+    grid: { width, height, cells },
+  });
+
+  engine.dispatch({
+    type: 'REGISTER_PACKAGE',
+    tick: 0,
+    pkg: { id: 'pkg-east', weight: 2, priority: 'HIGH' },
+  });
+  engine.dispatch({
+    type: 'REGISTER_PACKAGE',
+    tick: 0,
+    pkg: { id: 'pkg-west', weight: 2, priority: 'NORMAL' },
+  });
+
+  engine.dispatch({
+    type: 'REGISTER_POD',
+    tick: 0,
+    pod: { id: 'pod-east', cell: { x: 0, y: 1 }, packageIds: ['pkg-east'] },
+  });
+  engine.dispatch({
+    type: 'REGISTER_POD',
+    tick: 0,
+    pod: { id: 'pod-west', cell: { x: 8, y: 1 }, packageIds: ['pkg-west'] },
+  });
+
+  engine.dispatch({
+    type: 'ADD_ROBOT',
+    tick: 0,
+    robot: { id: 'R1', cell: { x: 0, y: 1 } },
+  });
+  engine.dispatch({
+    type: 'ADD_ROBOT',
+    tick: 0,
+    robot: { id: 'R2', cell: { x: 8, y: 1 } },
+  });
+
+  engine.dispatch({
+    type: 'ADD_JOB',
+    tick: 0,
+    job: {
+      id: 'job-east',
+      podId: 'pod-east',
+      packageIds: ['pkg-east'],
+      pickupCell: { x: 0, y: 1 },
+      dropCell: { x: 8, y: 1 },
+      priority: 'HIGH',
+    },
+  });
+
+  engine.dispatch({
+    type: 'ADD_JOB',
+    tick: 0,
+    job: {
+      id: 'job-west',
+      podId: 'pod-west',
+      packageIds: ['pkg-west'],
+      pickupCell: { x: 8, y: 1 },
+      dropCell: { x: 0, y: 1 },
+      priority: 'NORMAL',
+    },
+  });
+
+  return engine;
+}
+
 export function createKivaGridScenario(seed = 1337): SimulationEngine {
   const width = 20;
   const height = 13;
@@ -190,7 +268,6 @@ export function createKivaGridScenario(seed = 1337): SimulationEngine {
     cells[y]![width - 1] = 'wall';
   }
 
-  // Kiva storage pods in 2x3 islands with recessed bays
   for (const bx of [4, 8, 12, 15]) {
     for (const by of [2, 7]) {
       cells[by]![bx] = 'shelf';
@@ -202,19 +279,16 @@ export function createKivaGridScenario(seed = 1337): SimulationEngine {
     }
   }
 
-  // Pickups on West, Drops on East
   for (const y of [2, 5, 8, 10]) {
     cells[y]![1] = 'pickup';
     cells[y]![width - 2] = 'drop';
   }
 
-  // Chargers along north/south perimeter
   for (const x of [2, 6, 10, 14, 17]) {
     cells[1]![x] = 'charger';
     cells[height - 2]![x] = 'charger';
   }
 
-  // Slow zones & RF deadzones
   cells[6]![6] = 'slow';
   cells[6]![7] = 'slow';
   cells[6]![10] = 'deadzone';
@@ -284,6 +358,8 @@ export function createKivaGridScenario(seed = 1337): SimulationEngine {
   return engine;
 }
 
+export const createDemoWarehouseScenario = createKivaGridScenario;
+
 export function createHospitalCorridorScenario(seed = 2026): SimulationEngine {
   const width = 18;
   const height = 11;
@@ -291,7 +367,6 @@ export function createHospitalCorridorScenario(seed = 2026): SimulationEngine {
     Array.from({ length: width }, (): CellType => 'wall')
   );
 
-  // Main hospital concourse + ward branches
   for (let x = 1; x < width - 1; x++) {
     cells[5]![x] = 'floor';
   }
@@ -302,7 +377,6 @@ export function createHospitalCorridorScenario(seed = 2026): SimulationEngine {
     cells[4]![wx + 1] = 'bay';
   }
 
-  // Sterile pharmacy pickups & ward drops
   cells[1]![3] = 'pickup';
   cells[9]![3] = 'pickup';
   cells[1]![14] = 'drop';
@@ -310,7 +384,6 @@ export function createHospitalCorridorScenario(seed = 2026): SimulationEngine {
   cells[1]![7] = 'charger';
   cells[9]![11] = 'charger';
 
-  // MRI RF deadzone and wet floor slow zone
   cells[5]![8] = 'deadzone';
   cells[5]![9] = 'deadzone';
   cells[5]![5] = 'slow';
@@ -321,7 +394,6 @@ export function createHospitalCorridorScenario(seed = 2026): SimulationEngine {
     profile: { humanBufferRadius: 1, humanStaleTimeoutTicks: 10 },
   });
 
-  // Simulated hospital staff member in central corridor
   engine.dispatch({
     type: 'ADD_HUMAN',
     tick: 0,
