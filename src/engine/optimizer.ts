@@ -1,6 +1,5 @@
 import { SimulationEngine } from './engine';
 import {
-  CellType,
   Coord,
   GridMap,
   ReplayBundle,
@@ -62,7 +61,6 @@ export function proposeLayoutEdits(engine: SimulationEngine): LayoutEditProposal
   const proposals: LayoutEditProposal[] = [];
   const usedKeys = new Set<string>();
 
-  // Rank cells by combined wait count + occupancy
   const scoredCells: Array<{ x: number; y: number; score: number }> = [];
   for (let y = 1; y < grid.height - 1; y++) {
     for (let x = 1; x < grid.width - 1; x++) {
@@ -77,7 +75,6 @@ export function proposeLayoutEdits(engine: SimulationEngine): LayoutEditProposal
   }
   scoredCells.sort((a, b) => b.score - a.score || a.y - b.y || a.x - b.x);
 
-  // 1. Add passing bay in an adjacent shelf/wall pocket next to the hottest aisle cell
   for (const hot of scoredCells) {
     if (proposals.length >= 2) break;
     if (grid.cells[hot.y]![hot.x] !== 'floor') continue;
@@ -116,7 +113,6 @@ export function proposeLayoutEdits(engine: SimulationEngine): LayoutEditProposal
     }
   }
 
-  // 2. Relocate highest-traffic pickup closer to the centroid of active drop stations
   const dropCells: Coord[] = [];
   const pickupUsage = new Map<string, { cell: Coord; count: number }>();
 
@@ -142,7 +138,6 @@ export function proposeLayoutEdits(engine: SimulationEngine): LayoutEditProposal
       dropCells.reduce((acc, c) => acc + c.y, 0) / dropCells.length
     );
 
-    // Find nearest open floor cell halfway toward drop centroid
     const midX = Math.round((topPickup.cell.x + avgDropX) / 2);
     const midY = Math.round((topPickup.cell.y + avgDropY) / 2);
 
@@ -189,11 +184,9 @@ export function evaluateLayoutOptimization(
   const replay: ReplayBundle = sourceEngine.exportReplay();
   const ticks = Math.max(10, ticksToRun ?? sourceEngine.getState().tick);
 
-  // Baseline replay
   const baselineSim = SimulationEngine.fromReplay(replay);
   baselineSim.stepMany(ticks);
 
-  // Build optimized grid & remapped commands
   const optGrid = cloneGrid(replay.initialGrid);
   const pickupRemap = new Map<string, Coord>();
 
